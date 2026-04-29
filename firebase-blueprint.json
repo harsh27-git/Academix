@@ -1,0 +1,77 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "email", "createdAt"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A task for a student",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "dueDate": { "type": "string", "format": "date" },
+        "priority": { "type": "string", "enum": ["low", "medium", "high"] },
+        "userId": { "type": "string" },
+        "groupId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "completed", "dueDate", "priority", "userId", "createdAt", "updatedAt"]
+    },
+    "Group": {
+      "title": "Group",
+      "description": "A study group or category for tasks and notes",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "color": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "color", "userId", "createdAt"]
+    },
+    "Note": {
+      "title": "Note",
+      "description": "A note taken by a student",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "groupId": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "groupId", "userId", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "The user document"
+    },
+    "/groups/{groupId}": {
+      "schema": "Group",
+      "description": "Study groups created by users"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Tasks created by users"
+    },
+    "/notes/{noteId}": {
+      "schema": "Note",
+      "description": "Notes created by users"
+    }
+  }
+}

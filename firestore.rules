@@ -1,0 +1,130 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ---------------------------------------------------------
+    // 0. GLOBAL SAFETY NET
+    // ---------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ---------------------------------------------------------
+    // PROTECTED HELPERS
+    // ---------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // ---------------------------------------------------------
+    // ENTITY VALIDATION HELPERS
+    // ---------------------------------------------------------
+    
+    function isValidUser(data) {
+      return data.keys().hasAll(['userId', 'email', 'createdAt']) 
+        && data.keys().size() <= 6
+        && data.userId == request.auth.uid
+        && data.email is string && data.email.size() < 256
+        && data.createdAt == request.time;
+    }
+
+    function isValidGroup(data) {
+      return data.keys().hasAll(['name', 'color', 'userId', 'createdAt'])
+        && data.userId == request.auth.uid
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.color is string && data.color.matches('^#[a-fA-F0-9]{6}$');
+    }
+
+    function isValidTask(data) {
+      return data.keys().hasAll(['title', 'completed', 'dueDate', 'priority', 'userId', 'createdAt', 'updatedAt'])
+        && data.userId == request.auth.uid
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.completed is bool
+        && data.dueDate is string && data.dueDate.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && data.priority in ['low', 'medium', 'high']
+        && (data.get('groupId', null) == null || isValidId(data.groupId))
+        && data.updatedAt == request.time;
+    }
+
+    function isValidNote(data) {
+      return data.keys().hasAll(['title', 'content', 'groupId', 'userId', 'createdAt', 'updatedAt'])
+        && data.userId == request.auth.uid
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.content is string && data.content.size() <= 10000
+        && isValidId(data.groupId)
+        && data.updatedAt == request.time;
+    }
+
+    // ---------------------------------------------------------
+    // MATCH BLOCKS
+    // ---------------------------------------------------------
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) 
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL'])
+        && (incoming().get('email', existing().email) == existing().email)
+        && (incoming().get('createdAt', existing().createdAt) == existing().createdAt);
+    }
+
+    match /groups/{groupId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(groupId) && isValidGroup(incoming())
+        && incoming().createdAt == request.time;
+      allow update: if isSignedIn() && existing().userId == request.auth.uid 
+        && isValidGroup(incoming())
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'color']);
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /tasks/{taskId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(taskId) && isValidTask(incoming())
+        && incoming().createdAt == request.time; // Extra check for create
+      allow update: if isSignedIn() && existing().userId == request.auth.uid 
+        && isValidTask(incoming())
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && (
+          // Action: Toggle completion
+          incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'updatedAt']) ||
+          // Action: Edit details
+          incoming().diff(existing()).affectedKeys().hasOnly(['title', 'dueDate', 'priority', 'groupId', 'updatedAt'])
+        );
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /notes/{noteId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(noteId) && isValidNote(incoming())
+        && incoming().createdAt == request.time;
+      allow update: if isSignedIn() && existing().userId == request.auth.uid 
+        && isValidNote(incoming())
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'groupId', 'updatedAt']);
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+  }
+}
