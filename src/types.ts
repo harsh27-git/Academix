@@ -14,6 +14,8 @@ export interface Task {
   dueDate: string;
   priority: Priority;
   groupId?: string;
+  reminderTime?: string; // ISO format: yyyy-MM-ddTHH:mm
+  notified?: boolean;
 }
 
 export interface Note {

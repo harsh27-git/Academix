@@ -19,13 +19,32 @@ export default function TaskList({ tasks, onAddTask, onToggleTask, onDeleteTask,
   const [groupId, setGroupId] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
   const [showForm, setShowForm] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderTime, setReminderTime] = useState('12:00');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onAddTask({ title, dueDate, priority, groupId: groupId || undefined });
+    
+    let fullReminderTime = undefined;
+    if (reminderEnabled) {
+      const reminderDate = new Date(dueDate);
+      const [hours, minutes] = reminderTime.split(':');
+      reminderDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      fullReminderTime = reminderDate.toISOString();
+    }
+
+    onAddTask({ 
+      title, 
+      dueDate, 
+      priority, 
+      groupId: groupId || undefined,
+      reminderTime: fullReminderTime,
+      notified: false,
+    });
     setTitle('');
     setShowForm(false);
+    setReminderEnabled(false);
   };
 
   const priorityColors = {
@@ -105,6 +124,29 @@ export default function TaskList({ tasks, onAddTask, onToggleTask, onDeleteTask,
                   ))}
                 </div>
 
+                <div className="h-6 w-px bg-slate-100 mx-2"></div>
+
+                <button
+                  type="button"
+                  onClick={() => setReminderEnabled(!reminderEnabled)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-medium",
+                    reminderEnabled ? "bg-indigo-50 border-indigo-200 text-indigo-600" : "bg-slate-50 border-slate-100 text-slate-400 hover:bg-slate-100"
+                  )}
+                >
+                  <Plus size={14} />
+                  <span>{reminderEnabled ? format(parseISO(`1970-01-01T${reminderTime}:00`), 'h:mm a') : 'Add Reminder'}</span>
+                </button>
+
+                {reminderEnabled && (
+                  <input
+                    type="time"
+                    className="bg-slate-50 border border-slate-100 rounded-lg text-xs text-slate-600 px-3 py-1.5 focus:ring-0 font-mono"
+                    value={reminderTime}
+                    onChange={(e) => setReminderTime(e.target.value)}
+                  />
+                )}
+
                 <div className="flex-1"></div>
                 
                 <button
@@ -165,6 +207,12 @@ export default function TaskList({ tasks, onAddTask, onToggleTask, onDeleteTask,
                     <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
                       {groups.find(g => g.id === task.groupId)?.name || 'General'} • {format(parseISO(task.dueDate), 'MMM d')}
                     </p>
+                    {task.reminderTime && (
+                      <div className="flex items-center gap-1 text-[9px] font-bold text-indigo-400 bg-indigo-50/50 px-1.5 py-0.5 rounded uppercase tracking-tighter">
+                        <Plus size={8} />
+                        Reminder: {format(new Date(task.reminderTime), 'h:mm a')}
+                      </div>
+                    )}
                   </div>
                 </div>
 

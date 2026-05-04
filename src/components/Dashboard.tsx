@@ -19,6 +19,10 @@ interface DashboardProps {
 
 export default function Dashboard({ tasks, notes, groups, user, onNavigate, onToggleTask, onAddTask }: DashboardProps) {
   const todayTasks = tasks.filter(t => isToday(parseISO(t.dueDate)));
+  const completedTodayCount = todayTasks.filter(t => t.completed).length;
+  const totalTodayCount = todayTasks.length;
+  const dailyProgress = totalTodayCount > 0 ? (completedTodayCount / totalTodayCount) * 100 : 0;
+  
   const incompleteTodayCount = todayTasks.filter(t => !t.completed).length;
   const completedCount = tasks.filter(t => t.completed).length;
 
@@ -27,18 +31,38 @@ export default function Dashboard({ tasks, notes, groups, user, onNavigate, onTo
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       {/* Top Header */}
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-1">Good morning, {firstName}.</h1>
           <p className="text-slate-500">You have {incompleteTodayCount} tasks due today and {groups.length} group modules.</p>
         </div>
 
-        <button 
-          onClick={() => onNavigate('tasks')}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium shadow-md shadow-indigo-100 hover:bg-indigo-700 transition-all"
-        >
-          + New Task
-        </button>
+        <div className="flex items-center gap-8 w-full md:w-auto">
+          {totalTodayCount > 0 && (
+            <div className="flex flex-col items-end flex-1 md:flex-initial">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 px-1">Daily Completion</span>
+              <div className="flex items-center gap-3 w-full md:w-48">
+                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${dailyProgress}%` }}
+                    transition={{ type: "spring", stiffness: 50, damping: 20 }}
+                    className="h-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.3)]"
+                  />
+                </div>
+                <span className="text-sm font-bold text-slate-700 min-w-[2.5rem] text-right">{Math.round(dailyProgress)}%</span>
+              </div>
+            </div>
+          )}
+
+          <button 
+            onClick={() => onNavigate('tasks')}
+            className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 flex items-center gap-2"
+          >
+            <Plus size={16} />
+            <span>New Task</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-12 gap-6 min-h-0">
@@ -180,17 +204,37 @@ export default function Dashboard({ tasks, notes, groups, user, onNavigate, onTo
           <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col">
             <h3 className="text-sm font-bold mb-4 text-slate-800">Group Modules</h3>
             <div className="space-y-3">
-              {groups.map(group => (
-                <div key={group.id} className="p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-slate-200 transition-colors">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: group.color }}></span>
-                    <p className="text-xs font-bold text-slate-800">{group.name}</p>
+              {groups.map(group => {
+                const groupTasks = tasks.filter(t => t.groupId === group.id);
+                const groupCompleted = groupTasks.filter(t => t.completed).length;
+                const groupProgress = groupTasks.length > 0 ? (groupCompleted / groupTasks.length) * 100 : 0;
+
+                return (
+                  <div key={group.id} className="p-4 bg-slate-50 border border-slate-100 rounded-xl hover:border-slate-300 transition-colors">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: group.color }}></span>
+                        <p className="text-xs font-bold text-slate-800">{group.name}</p>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-400">{Math.round(groupProgress)}%</span>
+                    </div>
+                    
+                    <div className="h-1 bg-slate-200 rounded-full overflow-hidden mb-3">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${groupProgress}%` }}
+                        className="h-full bg-indigo-500/50"
+                        style={{ backgroundColor: group.color }}
+                      />
+                    </div>
+
+                    <p className="text-[10px] text-slate-500 flex items-center gap-2">
+                      <FileText size={10} />
+                      {notes.filter(n => n.groupId === group.id).length} notes shared
+                    </p>
                   </div>
-                  <p className="text-[10px] text-slate-500">
-                    {notes.filter(n => n.groupId === group.id).length} notes shared
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

@@ -27,23 +27,37 @@ export default function CalendarView({ tasks, onAddTask }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderTime, setReminderTime] = useState('12:00');
 
   const onDateClick = (day: Date) => {
     setSelectedDate(day);
     setNewTaskTitle('');
+    setReminderEnabled(false);
   };
 
   const handleAddTask = () => {
     if (!newTaskTitle.trim() || !selectedDate) return;
     
+    let fullReminderTime = undefined;
+    if (reminderEnabled) {
+      const [hours, minutes] = reminderTime.split(':');
+      const reminderDate = new Date(selectedDate);
+      reminderDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      fullReminderTime = reminderDate.toISOString();
+    }
+
     onAddTask({
       title: newTaskTitle.trim(),
       dueDate: format(selectedDate, 'yyyy-MM-dd'),
-      priority: 'medium'
+      priority: 'medium',
+      reminderTime: fullReminderTime,
+      notified: false,
     });
     
     setSelectedDate(null);
     setNewTaskTitle('');
+    setReminderEnabled(false);
   };
 
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
@@ -195,8 +209,51 @@ export default function CalendarView({ tasks, onAddTask }: CalendarProps) {
                       onChange={(e) => setNewTaskTitle(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
                       placeholder="What needs to be done?"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-indigo-500 outline-none transition-all"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:border-indigo-500 outline-none transition-all mb-4"
                     />
+                  </div>
+
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
+                          reminderEnabled ? "bg-indigo-100 text-indigo-600" : "bg-slate-200 text-slate-400"
+                        )}>
+                          <Plus size={16} />
+                        </div>
+                        <span className="text-sm font-bold text-slate-700">Set Reminder</span>
+                      </div>
+                      <button 
+                        onClick={() => setReminderEnabled(!reminderEnabled)}
+                        className={cn(
+                          "w-10 h-5 rounded-full transition-colors relative",
+                          reminderEnabled ? "bg-indigo-600" : "bg-slate-300"
+                        )}
+                      >
+                        <motion.div 
+                          animate={{ x: reminderEnabled ? 20 : 2 }}
+                          className="absolute top-1 left-0 w-3 h-3 bg-white rounded-full shadow-sm"
+                        />
+                      </button>
+                    </div>
+
+                    {reminderEnabled && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        className="overflow-hidden mt-4 pt-4 border-t border-slate-200"
+                      >
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 block mb-2">Reminder Time</label>
+                        <input 
+                          type="time" 
+                          value={reminderTime}
+                          onChange={(e) => setReminderTime(e.target.value)}
+                          className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-500 transition-all font-mono"
+                        />
+                        <p className="text-[10px] text-slate-400 mt-2 italic">* Browser notification will trigger at this time.</p>
+                      </motion.div>
+                    )}
                   </div>
                 </div>
 

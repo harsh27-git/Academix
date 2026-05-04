@@ -35,6 +35,49 @@ export default function App() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
 
+  // Notification Permission
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Reminder Checker
+  useEffect(() => {
+    if (!user || tasks.length === 0) return;
+
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      
+      tasks.forEach(task => {
+        if (!task.completed && task.reminderTime && !task.notified) {
+          const reminderTime = new Date(task.reminderTime).getTime();
+          
+          if (now >= reminderTime) {
+            // Trigger notification
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification('Task Reminder', {
+                body: task.title,
+                icon: '/favicon.ico'
+              });
+            } else {
+              // Fallback for when notifications are not allowed or supported
+              console.log('Reminder:', task.title);
+            }
+
+            // Mark as notified in database to prevent repeated notifications
+            updateDoc(doc(db, 'tasks', task.id), {
+              notified: true,
+              updatedAt: serverTimestamp()
+            }).catch(err => console.error('Error marking task as notified:', err));
+          }
+        }
+      });
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [user, tasks]);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -128,9 +171,9 @@ export default function App() {
         updatedAt: serverTimestamp(),
       };
       
-      if (task.groupId) {
-        payload.groupId = task.groupId;
-      }
+      if (task.groupId) payload.groupId = task.groupId;
+      if (task.reminderTime) payload.reminderTime = task.reminderTime;
+      if (task.notified !== undefined) payload.notified = task.notified;
 
       await addDoc(collection(db, 'tasks'), payload);
     } catch (err) {
