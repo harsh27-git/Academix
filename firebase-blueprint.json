@@ -54,6 +54,43 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "content", "groupId", "userId", "createdAt", "updatedAt"]
+    },
+    "StudyRoom": {
+      "title": "Study Room",
+      "description": "A collaborative room for group study",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "activeContent": { "type": "string" }
+      },
+      "required": ["name", "code", "createdBy", "createdAt"]
+    },
+    "StudyMessage": {
+      "title": "Study Message",
+      "description": "A message in a study room chat",
+      "type": "object",
+      "properties": {
+        "roomId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["roomId", "userId", "userName", "text", "createdAt"]
+    },
+    "StudyMember": {
+      "title": "Study Member",
+      "description": "A user in a study room",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "lastSeen": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "lastSeen"]
     }
   },
   "firestore": {
@@ -72,6 +109,18 @@
     "/notes/{noteId}": {
       "schema": "Note",
       "description": "Notes created by users"
+    },
+    "/studyRooms/{roomId}": {
+      "schema": "StudyRoom",
+      "description": "Collaborative study rooms"
+    },
+    "/studyRooms/{roomId}/messages/{messageId}": {
+      "schema": "StudyMessage",
+      "description": "Messages within a study room"
+    },
+    "/studyRooms/{roomId}/members/{memberId}": {
+      "schema": "StudyMember",
+      "description": "Active members in a study room"
     }
   }
 }

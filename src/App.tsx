@@ -10,6 +10,8 @@ import TaskList from './components/TaskList';
 import CalendarView from './components/CalendarView';
 import NotesView from './components/NotesView';
 import Auth from './components/Auth';
+import PomodoroTimer from './components/PomodoroTimer';
+import StudyBoard from './components/StudyBoard';
 import { View, Task, Group, Note } from './types';
 import { format } from 'date-fns';
 import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
@@ -34,6 +36,7 @@ export default function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [showPomodoro, setShowPomodoro] = useState(false);
 
   // Notification Permission
   useEffect(() => {
@@ -277,6 +280,8 @@ export default function App() {
             onDeleteGroup={handleDeleteGroup}
           />
         );
+      case 'study':
+        return <StudyBoard user={user!} />;
       default:
         return <Dashboard tasks={tasks} notes={notes} groups={groups} user={user} onNavigate={setActiveView} onToggleTask={handleToggleTask} onAddTask={handleAddTask} />;
     }
@@ -284,10 +289,18 @@ export default function App() {
 
   return (
     <div className="flex bg-[#F9FAFB] min-h-screen">
-      <Sidebar activeView={activeView} onViewChange={setActiveView} onLogout={handleLogout} user={user} />
+      <Sidebar 
+        activeView={activeView} 
+        onViewChange={setActiveView} 
+        onLogout={handleLogout} 
+        user={user} 
+        onTogglePomodoro={() => setShowPomodoro(true)}
+      />
       <main className="flex-1 p-8 overflow-y-auto h-screen">
         {renderView()}
       </main>
+      
+      {showPomodoro && <PomodoroTimer onClose={() => setShowPomodoro(false)} />}
     </div>
   );
 }

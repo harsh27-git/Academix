@@ -26,4 +26,28 @@ export interface Note {
   createdAt: string;
 }
 
-export type View = 'dashboard' | 'tasks' | 'calendar' | 'notes';
+export interface StudyRoom {
+  id: string;
+  name: string;
+  code: string;
+  createdBy: string;
+  createdAt: string;
+  activeContent?: string;
+}
+
+export interface StudyMessage {
+  id: string;
+  roomId: string;
+  userId: string;
+  userName: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface StudyMember {
+  id: string; // userId
+  name: string;
+  lastSeen: string;
+}
+
+export type View = 'dashboard' | 'tasks' | 'calendar' | 'notes' | 'study';

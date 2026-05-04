@@ -5,7 +5,9 @@ import {
   Calendar as CalendarIcon, 
   FolderOpen,
   Settings,
-  LogOut
+  LogOut,
+  Timer,
+  Users
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { View } from '../types';
@@ -15,15 +17,17 @@ interface SidebarProps {
   activeView: View;
   onViewChange: (view: View) => void;
   onLogout: () => void;
+  onTogglePomodoro: () => void;
   user: FirebaseUser | null;
 }
 
-export default function Sidebar({ activeView, onViewChange, onLogout, user }: SidebarProps) {
+export default function Sidebar({ activeView, onViewChange, onLogout, onTogglePomodoro, user }: SidebarProps) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'tasks', label: 'Tasks', icon: CheckSquare },
     { id: 'calendar', label: 'Calendar', icon: CalendarIcon },
     { id: 'notes', label: 'Study Groups', icon: FolderOpen },
+    { id: 'study', label: 'Study Board', icon: Users },
   ];
 
   return (
@@ -32,7 +36,7 @@ export default function Sidebar({ activeView, onViewChange, onLogout, user }: Si
         <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
           <div className="w-4 h-4 bg-white rounded-sm"></div>
         </div>
-        <span className="text-xl font-bold tracking-tight text-slate-900">Academix</span>
+        <span className="text-xl font-bold tracking-tight text-slate-900">StudyFlow</span>
       </div>
 
       <nav className="flex-1 space-y-8">
@@ -64,6 +68,14 @@ export default function Sidebar({ activeView, onViewChange, onLogout, user }: Si
       </nav>
 
       <div className="mt-auto border-t border-slate-100 pt-6 space-y-4">
+        <button 
+          onClick={onTogglePomodoro}
+          className="w-full flex items-center gap-3 px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-md transition-all text-sm font-semibold"
+        >
+          <Timer size={18} />
+          <span>Focus Timer</span>
+        </button>
+
         <button 
           onClick={onLogout}
           className="w-full flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-all text-sm font-medium"
