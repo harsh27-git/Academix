@@ -296,6 +296,7 @@ export default function App() {
         user={user} 
         onTogglePomodoro={() => setShowPomodoro(true)}
       />
+
       <main className="flex-1 p-8 overflow-y-auto h-screen">
         {renderView()}
       </main>
